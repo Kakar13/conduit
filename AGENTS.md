@@ -2,9 +2,10 @@
 
 ## What this is
 
-`conduit` — an iOS SSH client for managing remote cloud servers (AWS EC2).
-One dark full-bleed terminal, a resilient Network.framework transport,
-Secure Enclave keys guarded by Face ID, and a compact accessory key row.
+`conduit` — an iOS SSH client for any remote SSH host (cloud VMs, bare
+metal, home labs; e.g. AWS EC2). One dark full-bleed terminal, a resilient
+Network.framework transport, Secure Enclave keys guarded by Face ID, and a
+compact accessory key row.
 
 ## Build & test
 

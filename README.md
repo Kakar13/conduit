@@ -1,8 +1,10 @@
 # conduit
 
 An iOS SSH client built for one thing: open your phone, drop straight into a
-live remote server stream, run your commands, get out. Designed for managing
-cloud servers (AWS EC2 and friends) from an iPhone.
+live remote server stream, run your commands, get out. Works with **any host
+that speaks SSH** — cloud VMs (EC2, Droplets, Hetzner, Lightsail), bare
+metal, home labs, Raspberry Pis, containers — anything with an `sshd` and
+your public key in `authorized_keys`.
 
 - **No clutter.** A single dark, Metal-accelerated terminal. The only chrome
   is a status dot.
@@ -35,6 +37,23 @@ cloud servers (AWS EC2 and friends) from an iPhone.
 | Persistence | SwiftData (server profiles, known hosts) |
 | Language | Swift 6, strict concurrency, actors |
 
+## Protocol & standards
+
+conduit is built on published standards, end to end:
+
+| Standard | What conduit uses it for |
+| --- | --- |
+| **RFC 4251** | SSH protocol architecture (transport / userauth / connection layers). |
+| **RFC 4253** | Transport layer: key exchange, encryption & integrity, server host-key verification. |
+| **RFC 4252** | `publickey` user authentication — the auth challenge is signed inside the Secure Enclave. |
+| **RFC 4254** | Connection protocol: `session` channel, `pty-req` (§6.2, `xterm-256color`), `shell` (§6.5), `window-change` (§6.7) on resize. |
+| **RFC 5656** | `ecdsa-sha2-nistp256` keys and signatures (P-256 / ECDSA, also FIPS 186-5). |
+| **RFC 7435** | Trust-on-first-use for server host keys (pin first, refuse changes). |
+| **RFC 6824** | Multipath TCP — the transport behind Wi-Fi ⇄ cellular handover. |
+| **RFC 793 / RFC 6298** | TCP itself, and why conduit doesn't wait on it: retransmission timeouts can take minutes, so dead sockets are killed proactively. |
+| **RFC 1122 §4.2.3.6** | TCP keepalive probes (20 s idle, 10 s interval, 3 probes). |
+| **ECMA-48 / xterm** | Terminal control sequences, emulated by SwiftTerm. |
+
 ## Build
 
 Requires Xcode 26+ on macOS. The Xcode project is generated with
@@ -58,8 +77,10 @@ Then:
 
 1. conduit mints a P-256 key inside the Secure Enclave and shows you the
    public key.
-2. Add it to `~/.ssh/authorized_keys` on your server (for EC2: EC2 Instance
-   Connect, the console, or `user-data`).
+2. Add it to `~/.ssh/authorized_keys` on any server you want to reach
+   (however you normally would — editing the file, your provider's console,
+   cloud-init / `user-data`; on EC2 specifically, EC2 Instance Connect works
+   too).
 3. Enter host + username, tap **Connect**. Face ID unlocks the key.
 4. Next launch drops you straight into the terminal, already connecting.
 
@@ -82,12 +103,25 @@ Then:
  Secure Enclave P-256 (sign only) ── Face ID gate ─────────────┘
 ```
 
-- **Handover**: iOS moves the flow between Wi-Fi and cellular without a
-  reconnect where the path allows it (requires the Multipath entitlement).
-- **Detection**: `NWPathMonitor` kills a dead socket immediately instead of
-  waiting minutes for TCP timeouts; keepalive catches black-holed links.
-- **Recovery**: reconnect replays handshake + auth + pty + shell and flushes
-  buffered input. The terminal buffer is never cleared.
+- **Handover**: `NWParameters.multipathServiceType = .handover` lets iOS
+  migrate the flow between Wi-Fi and cellular without a reconnect, using
+  Multipath TCP (RFC 6824) where both ends support it (requires the
+  Multipath entitlement; stock EC2 AMIs don't run MPTCP, so the reconnect
+  engine below is the real guarantee). The whole SSH stack runs on
+  Network.framework's user-space TCP — no BSD sockets involved.
+- **Detection**: mobile links rarely fail cleanly — they hang, and vanilla
+  TCP (RFC 6298) will sit in retransmission backoff for minutes before
+  admitting it. `NWPathMonitor` watches interface availability and kills the
+  socket the moment every path drops; TCP keepalive (RFC 1122 §4.2.3.6:
+  20 s idle, 10 s interval, 3 probes → black-holed link declared dead in
+  ≤ 50 s) catches the quieter failures.
+- **Recovery**: `closeFuture` starts a reconnect loop with capped
+  exponential backoff (0.5 s → 15 s, 20 attempts; a returning path
+  short-circuits the wait). Each attempt replays handshake + auth + pty +
+  shell, then flushes the input buffer (≤ 8 KB of keystrokes typed during
+  the outage). A generation counter keeps close events from stale,
+  deliberately-torn-down transports from triggering phantom reconnects. The
+  terminal buffer is never cleared.
 - **Remote persistence**: the shell on the far end still dies with TCP. For
   true session persistence set the profile's reattach command to
   `tmux new -A -s main` (or `screen -xRR`) — reconnects then resume the
@@ -95,14 +129,17 @@ Then:
 
 ## Security notes
 
-- Private key material is non-exportable by construction (Secure Enclave).
+- Private key material is non-exportable by construction (Secure Enclave);
+  the SSH side sees only an `ecdsa-sha2-nistp256` public key (RFC 5656) and
+  its signatures.
 - Face ID is enforced at the app level before the key is loaded, with a
   5-minute reuse window so automatic reconnects don't prompt. To require
   biometry on *every* signature instead, add `.biometryAny` to the
   access-control flags in `SecureEnclaveKeyStore.createKey` (reconnects will
   then prompt).
-- Host keys use trust-on-first-use with SwiftData persistence; a changed key
-  is always refused and surfaced as a possible MITM.
+- Host keys use trust-on-first-use (RFC 7435) with SwiftData persistence;
+  the SHA-256 fingerprint (OpenSSH base64 format) is shown before you trust,
+  and a changed key is always refused and surfaced as a possible MITM.
 - No analytics, no telemetry, no servers of our own.
 
 ## License
