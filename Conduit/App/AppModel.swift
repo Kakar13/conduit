@@ -28,6 +28,7 @@ final class AppModel {
     let session: SSHSession
     let keyStore: SecureEnclaveKeyStore
     private let biometrics: BiometricAuthenticator
+    private let liveActivity = LiveActivityController()
     private let modelContext: ModelContext
     private var eventTask: Task<Void, Never>?
     private var connectTask: Task<Void, Never>?
@@ -46,6 +47,7 @@ final class AppModel {
     /// Consumes the session's event stream. Idempotent; call once at launch.
     func startObservingEvents() {
         guard eventTask == nil else { return }
+        liveActivity.endStaleActivities()
         eventTask = Task { [weak self] in
             guard let session = self?.session else { return }
             for await event in session.events {
@@ -58,6 +60,11 @@ final class AppModel {
         switch event {
         case .stateChanged(let state):
             sessionState = state
+            liveActivity.handle(
+                state: state,
+                serverName: activeProfile?.name,
+                serverDetail: activeProfile.map { "\($0.username)@\($0.host):\($0.port)" }
+            )
         case .hostKeyChallenge(let challenge):
             hostKeyChallenge = challenge
         case .hostKeyAlert(let alert):

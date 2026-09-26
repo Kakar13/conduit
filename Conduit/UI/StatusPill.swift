@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// The only persistent UI chrome: a tiny capsule reporting bridge state.
-/// Connected → a single green dot (tap for servers). Anything else → a
-/// labeled pill; tapping while offline or reconnecting retries immediately.
+/// The only persistent UI chrome: a tiny Liquid Glass capsule reporting
+/// bridge state. Connected → a single green dot (tap for servers). Anything
+/// else → a labeled pill; tapping while offline or reconnecting retries
+/// immediately.
 struct StatusPill: View {
     let state: SSHSession.State
     let onTap: () -> Void
@@ -23,8 +24,8 @@ struct StatusPill: View {
             Circle()
                 .fill(.green)
                 .frame(width: 8, height: 8)
-                .padding(8)
-                .background(.ultraThinMaterial, in: Capsule())
+                .padding(10)
+                .glassEffect(.regular.interactive())
         case .idle:
             EmptyView()
         default:
@@ -34,9 +35,9 @@ struct StatusPill: View {
                     .font(.system(.caption, design: .monospaced))
                     .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 7)
-            .background(.ultraThinMaterial, in: Capsule())
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .glassEffect(.regular.interactive())
         }
     }
 

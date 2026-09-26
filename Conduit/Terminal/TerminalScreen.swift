@@ -62,6 +62,7 @@ struct TerminalScreen: View {
         }
         .sheet(isPresented: serversPresented) {
             ServerListView()
+                .presentationDetents([.medium, .large])
         }
     }
 

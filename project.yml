@@ -27,6 +27,7 @@ targets:
         excludes:
           - Conduit.entitlements
           - Info.plist
+      - path: Shared
     dependencies:
       - package: SwiftTerm
         product: SwiftTerm
@@ -34,6 +35,7 @@ targets:
         product: NIOSSH
       - package: swift-nio-transport-services
         product: NIOTransportServices
+      - target: ConduitStatusWidget
     info:
       path: Conduit/Info.plist
       properties:
@@ -41,7 +43,11 @@ targets:
         UILaunchScreen: { }
         UIUserInterfaceStyle: Dark
         ITSAppUsesNonExemptEncryption: false
+        NSSupportsLiveActivities: true
         NSFaceIDUsageDescription: conduit uses Face ID to unlock the server keys stored in the Secure Enclave.
+        CFBundleURLTypes:
+          - CFBundleURLSchemes:
+              - conduit
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
           - UIInterfaceOrientationLandscapeLeft
@@ -61,5 +67,29 @@ targets:
         CODE_SIGN_ENTITLEMENTS: Conduit/Conduit.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        SWIFT_EMIT_LOC_STRINGS: YES
+
+  ConduitStatusWidget:
+    type: widget-extension
+    platform: iOS
+    sources:
+      - path: ConduitStatusWidget
+        excludes:
+          - Info.plist
+      - path: Shared
+    info:
+      path: ConduitStatusWidget/Info.plist
+      properties:
+        CFBundleDisplayName: conduit status
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.conduit.ssh.statuswidget
+        PRODUCT_NAME: ConduitStatusWidget
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        TARGETED_DEVICE_FAMILY: "1,2"
         ENABLE_USER_SCRIPT_SANDBOXING: YES
         SWIFT_EMIT_LOC_STRINGS: YES

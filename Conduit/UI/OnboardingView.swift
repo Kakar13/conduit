@@ -18,73 +18,101 @@ struct OnboardingView: View {
     @State private var copied = false
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            hero
+
             Form {
-            Section {
-                HStack(spacing: 10) {
-                    Image(systemName: "faceid")
-                        .font(.title2)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Secure Enclave key")
-                            .font(.headline)
-                        Text(publicKey != nil ? "Created — guarded by Face ID" : "Creating…")
+                Section {
+                    HStack(spacing: 12) {
+                        Image(systemName: "faceid")
+                            .font(.title2)
+                            .foregroundStyle(.green)
+                            .symbolRenderingMode(.hierarchical)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Secure Enclave key")
+                                .font(.headline)
+                            Text(publicKey != nil ? "Created — guarded by Face ID" : "Creating…")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                        if publicKey != nil {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                        }
+                    }
+                    if let publicKey {
+                        Text(publicKey)
+                            .font(.system(.caption2, design: .monospaced))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(3)
+                            .truncationMode(.middle)
+                            .textSelection(.enabled)
+                        Button {
+                            UIPasteboard.general.string = publicKey
+                            copied = true
+                        } label: {
+                            Label(copied ? "Copied" : "Copy public key",
+                                  systemImage: copied ? "checkmark" : "doc.on.doc")
+                        }
+                        Text("Add this key to ~/.ssh/authorized_keys on your server (EC2: use Instance Connect, the console, or user-data).")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Spacer()
-                    if publicKey != nil {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundStyle(.green)
+                    if let keyError {
+                        Label(keyError, systemImage: "exclamationmark.triangle")
+                            .font(.caption)
+                            .foregroundStyle(.red)
                     }
+                } header: {
+                    Text("1 — Your key stays on this iPhone")
                 }
-                if let publicKey {
-                    Text(publicKey)
-                        .font(.system(.caption2, design: .monospaced))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                        .truncationMode(.middle)
-                        .textSelection(.enabled)
-                    Button(copied ? "Copied" : "Copy public key") {
-                        UIPasteboard.general.string = publicKey
-                        copied = true
-                    }
-                    Text("Add this key to ~/.ssh/authorized_keys on your server (EC2: use Instance Connect, the console, or user-data).")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                if let keyError {
-                    Text(keyError)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                }
-            } header: {
-                Text("1 — Your key stays on this iPhone")
-            }
 
-            Section {
-                ServerFormFields(
-                    name: $name,
-                    host: $host,
-                    username: $username,
-                    port: $port,
-                    reattachCommand: $reattachCommand
-                )
-            } header: {
-                Text("2 — Your server")
-            }
-
-            Section {
-                Button(action: connect) {
-                    Text("Connect")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
+                Section {
+                    ServerFormFields(
+                        name: $name,
+                        host: $host,
+                        username: $username,
+                        port: $port,
+                        reattachCommand: $reattachCommand
+                    )
+                } header: {
+                    Text("2 — Your server")
                 }
-                .disabled(!canConnect)
             }
+            .scrollDismissesKeyboard(.interactively)
+
+            // Floating glass CTA.
+            Button(action: connect) {
+                Text("Connect")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
             }
-            .navigationTitle("conduit")
-            .task { ensureKey() }
+            .buttonStyle(.glassProminent)
+            .controlSize(.large)
+            .disabled(!canConnect)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
         }
+        .background(Color.black)
+        .task { ensureKey() }
+    }
+
+    private var hero: some View {
+        VStack(spacing: 10) {
+            Image("AppIconImage")
+                .resizable()
+                .frame(width: 76, height: 76)
+                .clipShape(RoundedRectangle(cornerRadius: 17, style: .continuous))
+                .shadow(color: .green.opacity(0.25), radius: 18, y: 6)
+            Text("conduit")
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
+            Text("SSH, distilled.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+        }
+        .padding(.top, 28)
+        .padding(.bottom, 8)
     }
 
     private var canConnect: Bool {

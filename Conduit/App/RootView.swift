@@ -27,5 +27,11 @@ struct RootView: View {
                 model.connect(to: profile)
             }
         }
+        // Tapping the Dynamic Island live status opens the server switcher.
+        .onOpenURL { url in
+            if url.host() == "servers" {
+                model.isShowingServers = true
+            }
+        }
     }
 }

@@ -12,6 +12,7 @@ struct ServerListView: View {
 
     @State private var isAddingServer = false
     @State private var publicKey: String?
+    @State private var copied = false
 
     var body: some View {
         NavigationStack {
@@ -21,7 +22,10 @@ struct ServerListView: View {
                         Button {
                             select(profile)
                         } label: {
-                            HStack {
+                            HStack(spacing: 12) {
+                                Image(systemName: "server.rack")
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 22)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(profile.name)
                                         .font(.body)
@@ -29,17 +33,23 @@ struct ServerListView: View {
                                     Text("\(profile.username)@\(profile.host):\(profile.port)")
                                         .font(.system(.caption, design: .monospaced))
                                         .foregroundStyle(.secondary)
+                                        .lineLimit(1)
+                                        .truncationMode(.middle)
                                 }
                                 Spacer()
                                 if profile.id == model.activeProfile?.id {
-                                    Image(systemName: "checkmark")
+                                    Image(systemName: "checkmark.circle.fill")
                                         .foregroundStyle(.green)
                                 }
                             }
                         }
                     }
                     .onDelete(perform: delete)
-                    Button("Add Server…") { isAddingServer = true }
+                    Button {
+                        isAddingServer = true
+                    } label: {
+                        Label("Add Server…", systemImage: "plus")
+                    }
                 }
 
                 Section("Server key (Secure Enclave)") {
@@ -50,8 +60,12 @@ struct ServerListView: View {
                             .lineLimit(3)
                             .truncationMode(.middle)
                             .textSelection(.enabled)
-                        Button("Copy public key") {
+                        Button {
                             UIPasteboard.general.string = publicKey
+                            copied = true
+                        } label: {
+                            Label(copied ? "Copied" : "Copy public key",
+                                  systemImage: copied ? "checkmark" : "doc.on.doc")
                         }
                     }
                 }
@@ -60,10 +74,12 @@ struct ServerListView: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
+                        .fontWeight(.semibold)
                 }
             }
             .sheet(isPresented: $isAddingServer) {
                 AddServerView()
+                    .presentationDetents([.medium, .large])
             }
         }
         .task { publicKey = try? model.keyStore.openSSHPublicKey() }
@@ -111,6 +127,7 @@ struct AddServerView: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") { save() }
+                        .fontWeight(.semibold)
                         .disabled(!canSave)
                 }
             }

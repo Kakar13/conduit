@@ -6,6 +6,9 @@ cloud servers (AWS EC2 and friends) from an iPhone.
 
 - **No clutter.** A single dark, Metal-accelerated terminal. The only chrome
   is a status dot.
+- **Live status in the Dynamic Island.** The bridge state (connected,
+  connecting, reconnecting, offline) is a Live Activity — visible on any
+  app, on the Lock Screen, and one tap takes you to the server switcher.
 - **A resilient data bridge.** Built on Apple's Network.framework with
   multipath handover, so the session rides through Wi-Fi ⇄ cellular
   transitions. When the transport truly dies, it re-establishes itself with
@@ -23,7 +26,8 @@ cloud servers (AWS EC2 and friends) from an iPhone.
 
 | Layer | Choice |
 | --- | --- |
-| UI | SwiftUI (iOS 26, `@Observable`), UIKit where it counts |
+| UI | SwiftUI (iOS 26, `@Observable`, Liquid Glass), UIKit where it counts |
+| Live status | ActivityKit Live Activity (Dynamic Island + Lock Screen) via a Widget extension |
 | Terminal | [SwiftTerm](https://github.com/migueldeicaza/SwiftTerm) (Metal renderer) |
 | SSH | [swift-nio-ssh](https://github.com/apple/swift-nio-ssh) |
 | Transport | Network.framework via [swift-nio-transport-services](https://github.com/apple/swift-nio-transport-services), `multipathServiceType = .handover`, TCP keepalive, `NWPathMonitor` |

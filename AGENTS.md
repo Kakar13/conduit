@@ -38,7 +38,12 @@ Secure Enclave keys guarded by Face ID, and a compact accessory key row.
 - `Conduit/App` — `ConduitApp` (SwiftUI `App` + SwiftData container),
   `AppModel` (`@MainActor @Observable`: biometric gate → `session.connect`,
   consumes `session.events`), `RootView` (onboarding vs terminal,
-  auto-connect to last used server).
+  auto-connect to last used server, `conduit://servers` deep link),
+  `LiveActivityController` (mirrors session state into the Dynamic Island /
+  Lock Screen Live Activity).
+- `ConduitStatusWidget` — Widget extension (separate target) rendering the
+  Live Activity. `Shared/ConduitActivityAttributes.swift` is compiled into
+  both targets and is the only contract between them.
 - `Conduit/SSH` — the engine. `SSHSession` is an **actor** and the single
   owner of transport state; it exposes `events`/`output` `AsyncStream`s
   (each consumed exactly once). Reconnects use a `generation` counter so
