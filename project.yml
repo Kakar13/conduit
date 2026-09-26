@@ -1,0 +1,65 @@
+name: conduit
+options:
+  bundleIdPrefix: com.conduit
+  deploymentTarget:
+    iOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  SwiftTerm:
+    url: https://github.com/migueldeicaza/SwiftTerm
+    # Pin to a tag once one is cut with the Metal renderer + thread-safe
+    # feed/send API (2.x line). main is stable in practice.
+    branch: main
+  swift-nio-ssh:
+    url: https://github.com/apple/swift-nio-ssh
+    from: 0.11.0
+  swift-nio-transport-services:
+    url: https://github.com/apple/swift-nio-transport-services
+    from: 1.23.0
+
+targets:
+  conduit:
+    type: application
+    platform: iOS
+    sources:
+      - path: Conduit
+        excludes:
+          - Conduit.entitlements
+          - Info.plist
+    dependencies:
+      - package: SwiftTerm
+        product: SwiftTerm
+      - package: swift-nio-ssh
+        product: NIOSSH
+      - package: swift-nio-transport-services
+        product: NIOTransportServices
+    info:
+      path: Conduit/Info.plist
+      properties:
+        CFBundleDisplayName: conduit
+        UILaunchScreen: { }
+        UIUserInterfaceStyle: Dark
+        ITSAppUsesNonExemptEncryption: false
+        NSFaceIDUsageDescription: conduit uses Face ID to unlock the server keys stored in the Secure Enclave.
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.conduit.ssh
+        PRODUCT_NAME: conduit
+        SWIFT_VERSION: "6.0"
+        SWIFT_STRICT_CONCURRENCY: complete
+        TARGETED_DEVICE_FAMILY: "1,2"
+        CODE_SIGN_ENTITLEMENTS: Conduit/Conduit.entitlements
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        ENABLE_USER_SCRIPT_SANDBOXING: YES
+        SWIFT_EMIT_LOC_STRINGS: YES

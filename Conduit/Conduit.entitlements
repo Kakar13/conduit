@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Required for NWParameters.multipathServiceType = .handover, the
+	     Wi-Fi <-> cellular handover support behind the resilient bridge.
+	     Must also be enabled on the App ID in the Developer portal. -->
+	<key>com.apple.developer.networking.multipath</key>
+	<true/>
+</dict>
+</plist>
