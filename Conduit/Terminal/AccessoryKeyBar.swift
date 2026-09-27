@@ -123,8 +123,8 @@ final class AccessoryKeyBar: UIInputView {
 
     private func makeSymbolButton(_ symbol: String, action: @escaping () -> Void) -> UIButton {
         let button = style(UIButton(type: .custom))
-        button.setImage(UIImage(systemName: symbol), for: .normal)
-        button.preferredSymbolConfiguration = .init(pointSize: 15, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        button.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
         button.addAction(UIAction { _ in action() }, for: .touchUpInside)
         button.addAction(UIAction { [weak self] _ in self?.haptic.impactOccurred() }, for: .touchDown)
         return button
@@ -132,8 +132,8 @@ final class AccessoryKeyBar: UIInputView {
 
     private func makeArrowButton(_ symbol: String, direction: Direction) -> UIButton {
         let button = style(UIButton(type: .custom))
-        button.setImage(UIImage(systemName: symbol), for: .normal)
-        button.preferredSymbolConfiguration = .init(pointSize: 15, weight: .medium)
+        let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        button.setImage(UIImage(systemName: symbol, withConfiguration: config), for: .normal)
         button.addAction(UIAction { [weak self] _ in
             self?.haptic.impactOccurred()
             self?.sendArrow(direction)
@@ -187,10 +187,16 @@ final class AccessoryKeyBar: UIInputView {
 
     private func startRepeating(_ direction: Direction) {
         stopRepeating()
+        // scheduledTimer blocks are @Sendable but run on the scheduling
+        // (main) runloop — assert the main actor instead of hopping.
         repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.4, repeats: false) { [weak self] _ in
-            guard let self else { return }
-            self.repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
-                self?.sendArrow(direction)
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.repeatTimer = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
+                    MainActor.assumeIsolated {
+                        self?.sendArrow(direction)
+                    }
+                }
             }
         }
     }
