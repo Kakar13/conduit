@@ -6,7 +6,7 @@ import Foundation
 ///
 /// Static bits (which server) live in the attributes; everything that
 /// changes over the session's life lives in `ContentState`.
-struct ConduitActivityAttributes: ActivityAttributes {
+struct ConduitActivityAttributes: ActivityAttributes, Sendable {
     public struct ContentState: Codable, Hashable, Sendable {
         public enum Status: String, Codable, Hashable, Sendable {
             case connecting
