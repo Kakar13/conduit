@@ -146,7 +146,7 @@ final class AppModel {
         switch phase {
         case .background:
             guard activeProfile != nil, backgroundTask == .invalid else { return }
-            backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] _ in
+            backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] in
                 self?.backgroundTaskExpired()
             }
         case .active:
