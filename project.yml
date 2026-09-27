@@ -72,7 +72,7 @@ targets:
         SWIFT_EMIT_LOC_STRINGS: YES
 
   ConduitStatusWidget:
-    type: widget-extension
+    type: app-extension
     platform: iOS
     sources:
       - path: ConduitStatusWidget
