@@ -112,7 +112,7 @@ final class LiveActivityController {
     }
 
     private nonisolated static func endAllExisting() async {
-        for await activity in Activity<ConduitActivityAttributes>.activities {
+        for activity in Activity<ConduitActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
