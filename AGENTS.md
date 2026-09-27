@@ -7,6 +7,22 @@ metal, home labs; e.g. AWS EC2). One dark full-bleed terminal, a resilient
 Network.framework transport, Secure Enclave keys guarded by Face ID, and a
 compact accessory key row.
 
+## Product intent (decided — reflect in future work; README now carries the Privacy section)
+
+- **Privacy-first, for use by others.** No accounts, no telemetry, no
+  conduit-operated backend or relay — ever. All onboarding intelligence
+  runs client-side against infrastructure the user already owns. Never add
+  push relays, email capture, license servers, or cloud-synced keys.
+  README has a "Privacy" section; keep its claims true of every change.
+- **Universal onboarding = terminal pairing (SHIPPED).** Onboarding ladder:
+  pairing line (embedded pubkey, idempotent, no network calls) → QR scan
+  (`conduit://connect`) → manual entry. Helper script:
+  `scripts/conduit-pair.sh`. Provider-API flows (AWS EC2 Instance Connect
+  ephemeral `SendSSHPublicKey`) are future cloud accelerators, not the base
+  path. Password auth is explicitly rejected; `.pem` import may come later
+  as software Keychain keys (the Secure Enclave cannot import keys by
+  design).
+
 ## Build & test
 
 - There is **no checked-in `.xcodeproj`** — it is generated:
@@ -38,10 +54,13 @@ compact accessory key row.
 
 - `Conduit/App` — `ConduitApp` (SwiftUI `App` + SwiftData container),
   `AppModel` (`@MainActor @Observable`: biometric gate → `session.connect`,
-  consumes `session.events`), `RootView` (onboarding vs terminal,
-  auto-connect to last used server, `conduit://servers` deep link),
-  `LiveActivityController` (mirrors session state into the Dynamic Island /
-  Lock Screen Live Activity).
+  consumes `session.events`, `pair(from:)` for `conduit://connect` codes),
+  `RootView` (onboarding vs terminal, auto-connect to last used server,
+  deep-link routing: `conduit://connect` pairs + connects,
+  `conduit://servers` opens the switcher), `PairingPayload` (parses
+  `conduit://connect?host&user&port&name`), `LiveActivityController`
+  (mirrors session state into the Dynamic Island / Lock Screen Live
+  Activity).
 - `ConduitStatusWidget` — Widget extension (separate target) rendering the
   Live Activity. `Shared/ConduitActivityAttributes.swift` is compiled into
   both targets and is the only contract between them.
@@ -64,8 +83,15 @@ compact accessory key row.
   implementing `TerminalViewDelegate`), `AccessoryKeyBar` (UIInputView,
   esc/ctrl latch/tab/arrows/etc.), `TerminalScreen` (full-bleed surface,
   host-key alerts, consumes `session.output`).
-- `Conduit/UI` — `StatusPill` (only chrome), `OnboardingView`,
-  `ServerListView`/`AddServerView`, `ServerFormFields`.
+- `Conduit/UI` — `StatusPill` (only chrome), `OnboardingView` (pairing
+  ladder: pairing line → QR scan → manual entry), `QRScannerView` /
+  `QRScannerSheet` (AVFoundation scanner; detector is a nonisolated class
+  hopping to the main actor exactly once), `ServerListView` /
+  `AddServerView` (Add has QR scan-to-fill), `ServerFormFields`.
+- `scripts/conduit-pair.sh` — the repo's pairing helper: idempotent key
+  install, prints `conduit://connect` derived from `$SSH_CONNECTION`,
+  optional QR via `qrencode`. Keep it POSIX sh, zero network calls — it is
+  part of the privacy promise.
 - `Conduit/Models` — `ServerProfile`, `KnownHost` (SwiftData `@Model`),
   `ServerEndpoint` (Sendable snapshot of a profile; the only thing handed to
   the SSH actor — SwiftData models never cross actor boundaries),

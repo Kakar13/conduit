@@ -75,14 +75,46 @@ Then:
 
 ## First run
 
+conduit's onboarding is a ladder — every rung works on **any host with an
+sshd**, from an EC2 instance to a Raspberry Pi:
+
 1. conduit mints a P-256 key inside the Secure Enclave and shows you the
    public key.
-2. Add it to `~/.ssh/authorized_keys` on any server you want to reach
-   (however you normally would — editing the file, your provider's console,
-   cloud-init / `user-data`; on EC2 specifically, EC2 Instance Connect works
-   too).
-3. Enter host + username, tap **Connect**. Face ID unlocks the key.
+2. **Paste the pairing line** into an SSH session you already have on the
+   server (from any computer). It installs the key idempotently and prints
+   your session's connection details. Prefer a script? The same installer
+   lives in this repo —
+   `curl -sSL https://raw.githubusercontent.com/Kakar13/conduit/main/scripts/conduit-pair.sh | sh -s -- '<public key>'`
+   — it additionally prints a `conduit://connect` QR (with `qrencode` on the
+   server).
+3. **Scan the QR** conduit prints (or tap the link) — the profile is
+   created and it connects. No typing. Or type host + username if you
+   prefer; Face ID unlocks the key and the server's host key is pinned on
+   first connect (TOFU).
 4. Next launch drops you straight into the terminal, already connecting.
+
+## Privacy
+
+conduit has no backend. No account, no sign-up, no telemetry, no
+conduit-operated server anywhere in the data path — and the source in this
+repo is the proof:
+
+- **On-device only.** Keys are generated in the Secure Enclave and never
+  leave it; server profiles and known hosts live in SwiftData on the
+  device; iCloud never sees any of it.
+- **Pairing is local.** The pairing line runs inside *your* SSH session on
+  *your* server and derives its connection details from the session itself
+  — zero outbound calls. The optional helper script is a static file in
+  this repo, served by GitHub's CDN; GitHub sees an anonymous download,
+  nothing else.
+- **No SDKs that phone home.** The only network traffic conduit ever
+  originates is SSH to your servers (and, if you use a provider flow
+  later, API calls to *your* provider account).
+- **No analytics, no crash reporting, no ads, no tracking.**
+- **App Store privacy label: Data Not Collected.**
+
+If conduit ever grows a feature that requires a server, that's a bug in
+the product, not a feature.
 
 ## How the resilience works
 

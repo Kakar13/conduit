@@ -112,6 +112,26 @@ final class AppModel {
         connect(to: activeProfile)
     }
 
+    // MARK: Pairing
+
+    /// Creates a profile from a scanned/opened `conduit://connect` payload
+    /// and connects immediately.
+    func pair(from code: String) {
+        guard let payload = PairingPayload.parse(code) else {
+            errorMessage = "That isn't a conduit pairing code."
+            return
+        }
+        let profile = ServerProfile(
+            name: payload.name,
+            host: payload.host,
+            port: payload.port,
+            username: payload.user
+        )
+        modelContext.insert(profile)
+        try? modelContext.save()
+        connect(to: profile)
+    }
+
     // MARK: Host key responses
 
     func respondToHostKeyChallenge(accept: Bool) {

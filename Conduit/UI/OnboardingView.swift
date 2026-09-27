@@ -16,6 +16,8 @@ struct OnboardingView: View {
     @State private var publicKey: String?
     @State private var keyError: String?
     @State private var copied = false
+    @State private var copiedLine = false
+    @State private var isScanning = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -69,6 +71,35 @@ struct OnboardingView: View {
                 }
 
                 Section {
+                    // Rung 1: one paste into access you already have.
+                    Text("From any computer, open an SSH session to your server and paste this line — it installs your key:")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text(pairingLine)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(4)
+                        .truncationMode(.middle)
+                        .textSelection(.enabled)
+                    Button {
+                        UIPasteboard.general.string = pairingLine
+                        copiedLine = true
+                    } label: {
+                        Label(copiedLine ? "Copied" : "Copy pairing line",
+                              systemImage: copiedLine ? "checkmark" : "doc.on.doc")
+                    }
+
+                    // Rung 2: scan what the helper prints.
+                    Button {
+                        isScanning = true
+                    } label: {
+                        Label("Scan pairing QR", systemImage: "qrcode")
+                    }
+                    Text("The repo's helper script prints a scannable QR after installing the key — scan it here and you're done, no typing.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    // Rung 3: manual entry.
                     ServerFormFields(
                         name: $name,
                         host: $host,
@@ -77,10 +108,15 @@ struct OnboardingView: View {
                         reattachCommand: $reattachCommand
                     )
                 } header: {
-                    Text("2 — Your server")
+                    Text("2 — Pair your server")
                 }
             }
             .scrollDismissesKeyboard(.interactively)
+            .sheet(isPresented: $isScanning) {
+                QRScannerSheet { code in
+                    model.pair(from: code)
+                }
+            }
 
             // Floating glass CTA.
             Button(action: connect) {
@@ -118,6 +154,14 @@ struct OnboardingView: View {
     private var canConnect: Bool {
         publicKey != nil && !host.trimmingCharacters(in: .whitespaces).isEmpty
             && !username.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    /// The universal pairing line: installs the key idempotently, fixes
+    /// permissions, and reports the session's connection details — all
+    /// inside the user's own SSH session, with zero network calls.
+    private var pairingLine: String {
+        guard let publicKey else { return "" }
+        return "mkdir -p ~/.ssh && chmod 700 ~/.ssh && (grep -qF '\(publicKey)' ~/.ssh/authorized_keys 2>/dev/null || echo '\(publicKey)' >> ~/.ssh/authorized_keys) && chmod 600 ~/.ssh/authorized_keys && echo conduit key installed"
     }
 
     private func ensureKey() {

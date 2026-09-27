@@ -108,10 +108,22 @@ struct AddServerView: View {
     @State private var username = ""
     @State private var port = "22"
     @State private var reattachCommand = ""
+    @State private var isScanning = false
 
     var body: some View {
         NavigationStack {
             Form {
+                Section {
+                    Button {
+                        isScanning = true
+                    } label: {
+                        Label("Scan pairing QR", systemImage: "qrcode")
+                    }
+                    Text("Scanning a pairing QR fills the fields below — nothing is sent anywhere.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
                 ServerFormFields(
                     name: $name,
                     host: $host,
@@ -129,6 +141,16 @@ struct AddServerView: View {
                     Button("Save") { save() }
                         .fontWeight(.semibold)
                         .disabled(!canSave)
+                }
+            }
+            .sheet(isPresented: $isScanning) {
+                QRScannerSheet { code in
+                    if let payload = PairingPayload.parse(code) {
+                        name = payload.name
+                        host = payload.host
+                        username = payload.user
+                        port = String(payload.port)
+                    }
                 }
             }
         }

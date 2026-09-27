@@ -27,10 +27,16 @@ struct RootView: View {
                 model.connect(to: profile)
             }
         }
-        // Tapping the Dynamic Island live status opens the server switcher.
+        // Deep links: pairing QR codes / `conduit://connect` opens straight
+        // into the (new) server; `conduit://servers` opens the switcher.
         .onOpenURL { url in
-            if url.host() == "servers" {
+            switch url.host() {
+            case "connect":
+                model.pair(from: url.absoluteString)
+            case "servers":
                 model.isShowingServers = true
+            default:
+                break
             }
         }
     }

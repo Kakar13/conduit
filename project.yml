@@ -45,6 +45,7 @@ targets:
         ITSAppUsesNonExemptEncryption: false
         NSSupportsLiveActivities: true
         NSFaceIDUsageDescription: conduit uses Face ID to unlock the server keys stored in the Secure Enclave.
+        NSCameraUsageDescription: conduit uses the camera only to scan a server pairing QR code. Nothing is captured or sent.
         CFBundleURLTypes:
           - CFBundleURLSchemes:
               - conduit
