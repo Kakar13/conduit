@@ -5,10 +5,18 @@ import UIKit
 /// latching Control, Tab, arrows (with hold-to-repeat), Home/End, Page
 /// Up/Down, and the shell punctuation that is painful to reach (`| ~ ` -`).
 ///
+/// Styled as an opaque Notes-style bar — solid background, hairline
+/// separator, bordered keys — instead of the translucent keyboard material,
+/// which read as a transparent overlay over the terminal.
+///
 /// The bar sends through SwiftTerm's own input pipeline, so application
 /// cursor mode and the control latch behave exactly as on a hardware
 /// keyboard.
-final class AccessoryKeyBar: UIInputView {
+final class AccessoryKeyBar: UIView {
+    /// Height of the bar; the terminal insets its scroll content by this so
+    /// the last line is always scrollable above the bar.
+    static let barHeight: CGFloat = 46
+
     private weak var terminal: TerminalView?
     private var ctrlButton: UIButton?
     private var repeatTimer: Timer?
@@ -20,12 +28,21 @@ final class AccessoryKeyBar: UIInputView {
 
     init(terminal: TerminalView) {
         self.terminal = terminal
-        // The system stretches accessory views to the keyboard's width; the
-        // frame width here is only a placeholder.
-        super.init(
-            frame: CGRect(x: 0, y: 0, width: 320, height: 46),
-            inputViewStyle: .keyboard
-        )
+        super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.barHeight))
+        // Opaque bar, clearly distinct from the terminal above it.
+        backgroundColor = UIColor(white: 0.09, alpha: 1)
+
+        let hairline = UIView()
+        hairline.backgroundColor = UIColor(white: 1, alpha: 0.08)
+        hairline.translatesAutoresizingMaskIntoConstraints = false
+        addSubview(hairline)
+        NSLayoutConstraint.activate([
+            hairline.leadingAnchor.constraint(equalTo: leadingAnchor),
+            hairline.trailingAnchor.constraint(equalTo: trailingAnchor),
+            hairline.topAnchor.constraint(equalTo: topAnchor),
+            hairline.heightAnchor.constraint(equalToConstant: 0.5),
+        ])
+
         buildButtons()
         NotificationCenter.default.addObserver(
             self,
@@ -105,9 +122,11 @@ final class AccessoryKeyBar: UIInputView {
         button.titleLabel?.font = .monospacedSystemFont(ofSize: 15, weight: .medium)
         button.setTitleColor(UIColor(white: 0.9, alpha: 1), for: .normal)
         button.tintColor = UIColor(white: 0.9, alpha: 1)
-        button.backgroundColor = UIColor(white: 1, alpha: 0.12)
+        button.backgroundColor = UIColor(white: 1, alpha: 0.16)
         button.layer.cornerRadius = 7
         button.layer.cornerCurve = .continuous
+        button.layer.borderWidth = 0.5
+        button.layer.borderColor = UIColor(white: 1, alpha: 0.10).cgColor
         button.widthAnchor.constraint(greaterThanOrEqualToConstant: 44).isActive = true
         button.heightAnchor.constraint(equalToConstant: 36).isActive = true
         return button

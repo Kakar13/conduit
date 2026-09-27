@@ -83,7 +83,9 @@ compact accessory key row.
   implementing `TerminalViewDelegate`), `AccessoryKeyBar` (UIInputView,
   esc/ctrl latch/tab/arrows/etc.), `TerminalScreen` (full-bleed surface,
   host-key alerts, consumes `session.output`).
-- `Conduit/UI` — `StatusPill` (only chrome), `OnboardingView` (pairing
+- `Conduit/UI` — `StatusPill` (only chrome — glass capsule with the
+  terminal glyph; state is colored *text*, never LEDs, to avoid colliding
+  with iOS system status colors), `OnboardingView` (pairing
   ladder: pairing line → QR scan → manual entry), `QRScannerView` /
   `QRScannerSheet` (AVFoundation scanner; detector is a nonisolated class
   hopping to the main actor exactly once), `ServerListView` /

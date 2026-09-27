@@ -37,6 +37,11 @@ struct TerminalViewRepresentable: UIViewRepresentable {
             context.coordinator.didEnableMetal = true
             try? uiView.setUseMetal(true)
         }
+        // Keep the last line scrollable above the persistent accessory bar.
+        if uiView.contentInset.bottom != AccessoryKeyBar.barHeight {
+            uiView.contentInset.bottom = AccessoryKeyBar.barHeight
+            uiView.verticalScrollIndicatorInsets.bottom = AccessoryKeyBar.barHeight
+        }
         if context.coordinator.shouldFocus {
             context.coordinator.shouldFocus = false
             _ = uiView.becomeFirstResponder()

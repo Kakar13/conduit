@@ -9,11 +9,13 @@ struct TerminalScreen: View {
 
     var body: some View {
         ZStack(alignment: .top) {
+            // Safe-area-respecting: SwiftUI's keyboard avoidance shrinks the
+            // terminal above the keyboard + accessory bar, so the prompt is
+            // never hidden and scrollback stays reachable.
             TerminalViewRepresentable(
                 session: model.session,
                 handle: handle
             )
-            .ignoresSafeArea()
 
             StatusPill(
                 state: model.sessionState,
@@ -22,7 +24,7 @@ struct TerminalScreen: View {
             )
             .padding(.top, 4)
         }
-        .background(Color.black)
+        .background(Color(white: 0.04).ignoresSafeArea())
         .task {
             // Pump remote output into the terminal. Single consumer.
             for await data in model.session.output {

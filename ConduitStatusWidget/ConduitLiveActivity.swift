@@ -5,16 +5,20 @@ import WidgetKit
 /// Renders the bridge status in the Dynamic Island and on the Lock Screen.
 /// The system renders this out-of-process; the app only pushes
 /// `ContentState` updates via ActivityKit.
+///
+/// The mark is the terminal glyph; state is expressed with colored *text*.
+/// No colored dots or background pills — green/orange/red LEDs would
+/// collide with iOS's own system indicators (calls, mic, recording).
 struct ConduitLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: ConduitActivityAttributes.self) { context in
             // MARK: Lock Screen
             HStack(spacing: 8) {
-                Circle()
-                    .fill(color(for: context.state.status))
-                    .frame(width: 8, height: 8)
+                Image(systemName: "apple.terminal")
+                    .foregroundStyle(.white)
                 Text(text(for: context.state))
                     .font(.system(.footnote, design: .monospaced))
+                    .foregroundStyle(color(for: context.state.status))
                 Spacer()
                 Text(context.attributes.serverName)
                     .font(.system(.footnote, design: .monospaced))
@@ -28,11 +32,11 @@ struct ConduitLiveActivity: Widget {
                 // MARK: Expanded (long-press)
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 6) {
-                        Circle()
-                            .fill(color(for: context.state.status))
-                            .frame(width: 8, height: 8)
+                        Image(systemName: "apple.terminal")
+                            .foregroundStyle(.white)
                         Text(text(for: context.state))
                             .font(.system(.caption, design: .monospaced))
+                            .foregroundStyle(color(for: context.state.status))
                     }
                 }
                 DynamicIslandExpandedRegion(.trailing) {
@@ -51,24 +55,23 @@ struct ConduitLiveActivity: Widget {
                 }
             } compactLeading: {
                 // MARK: Compact
-                Circle()
-                    .fill(color(for: context.state.status))
-                    .frame(width: 7, height: 7)
+                Image(systemName: "apple.terminal")
+                    .foregroundStyle(.white)
             } compactTrailing: {
                 Text(compactText(for: context.state))
                     .font(.system(.caption2, design: .monospaced))
+                    .foregroundStyle(color(for: context.state.status))
                     .lineLimit(1)
             } minimal: {
                 // MARK: Minimal (island shared with another activity)
-                Circle()
-                    .fill(color(for: context.state.status))
-                    .frame(width: 6, height: 6)
+                Image(systemName: "apple.terminal")
+                    .foregroundStyle(.white)
             }
-            .keylineTint(color(for: context.state.status))
             .widgetURL(URL(string: "conduit://servers"))
         }
     }
 
+    /// Only used on text, never on filled shapes.
     private func color(for status: ConduitActivityAttributes.ContentState.Status) -> Color {
         switch status {
         case .connecting: .yellow

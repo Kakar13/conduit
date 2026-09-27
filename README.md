@@ -7,7 +7,8 @@ metal, home labs, Raspberry Pis, containers — anything with an `sshd` and
 your public key in `authorized_keys`.
 
 - **No clutter.** A single dark, Metal-accelerated terminal. The only chrome
-  is a status dot.
+  is a tiny Liquid Glass pill carrying the terminal glyph — state is colored
+  text, never an LED, so it never collides with iOS's own status colors.
 - **Live status in the Dynamic Island.** The bridge state (connected,
   connecting, reconnecting, offline) is a Live Activity — visible on any
   app, on the Lock Screen, and one tap takes you to the server switcher.

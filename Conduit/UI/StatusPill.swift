@@ -1,9 +1,10 @@
 import SwiftUI
 
 /// The only persistent UI chrome: a tiny Liquid Glass capsule reporting
-/// bridge state. Connected → a single green dot (tap for servers). Anything
-/// else → a labeled pill; tapping while offline or reconnecting retries
-/// immediately.
+/// bridge state, branded with the terminal glyph (colored LED dots would
+/// collide with iOS's own green/orange/red system indicators). Connected →
+/// just the glyph (tap for servers). Anything else → glyph + state label;
+/// tapping while offline or reconnecting retries immediately.
 struct StatusPill: View {
     let state: SSHSession.State
     let onTap: () -> Void
@@ -21,19 +22,21 @@ struct StatusPill: View {
     private var content: some View {
         switch state {
         case .connected:
-            Circle()
-                .fill(.green)
-                .frame(width: 8, height: 8)
+            Image(systemName: "apple.terminal")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(.white)
                 .padding(10)
                 .glassEffect(.regular.interactive())
         case .idle:
             EmptyView()
         default:
             HStack(spacing: 6) {
-                Circle().fill(color).frame(width: 7, height: 7)
+                Image(systemName: "apple.terminal")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.white)
                 Text(text)
                     .font(.system(.caption, design: .monospaced))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(color)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -41,6 +44,8 @@ struct StatusPill: View {
         }
     }
 
+    /// State colors are only ever applied to text — never to pill
+    /// backgrounds — so they can't be mistaken for iOS system indicators.
     private var color: Color {
         switch state {
         case .connected: .green
