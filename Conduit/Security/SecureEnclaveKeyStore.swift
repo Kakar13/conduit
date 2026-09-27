@@ -48,7 +48,7 @@ struct SecureEnclaveKeyStore {
     /// reference blob in the keychain. Overwrites any existing key with the
     /// same tag.
     @discardableResult
-    func createKey(tag: String = defaultKeyTag) throws -> SecureEnclave.P256.Signing.PublicKey {
+    func createKey(tag: String = defaultKeyTag) throws -> P256.Signing.PublicKey {
         guard SecureEnclave.isAvailable else { throw KeyStoreError.enclaveUnavailable }
 
         var error: Unmanaged<CFError>?
