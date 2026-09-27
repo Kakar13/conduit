@@ -19,9 +19,15 @@ final class QRScannerController: UIViewController {
     private let detector: QRDetector
     private var previewLayer: AVCaptureVideoPreviewLayer?
 
-    /// AVCaptureSession is documented thread-safe; `nonisolated(unsafe)`
-    /// lets it cross into the queue where start/stop must run.
-    nonisolated(unsafe) private let session = AVCaptureSession()
+    /// AVCaptureSession is documented thread-safe but SDK-non-Sendable, so
+    /// it lives in an explicitly-unchecked Sendable box: the only crossing
+    /// is the box itself, and start/stop run inside the (nonisolated)
+    /// dispatch closure that owns it.
+    private final class SessionBox: @unchecked Sendable {
+        let session = AVCaptureSession()
+    }
+
+    private let box = SessionBox()
     private var statusLabel: UILabel?
 
     init(onCode: @escaping @MainActor (String) -> Void) {
@@ -40,12 +46,14 @@ final class QRScannerController: UIViewController {
         view.backgroundColor = .black
 
         guard let device = AVCaptureDevice.default(for: .video),
-              let input = try? AVCaptureDeviceInput(device: device),
-              let output = AVCaptureMetadataOutput() else {
+              let input = try? AVCaptureDeviceInput(device: device) else {
             showStatus("Camera unavailable on this device.")
             return
         }
 
+        let output = AVCaptureMetadataOutput()
+
+        let session = box.session
         session.beginConfiguration()
         guard session.canAddInput(input), session.canAddOutput(output) else {
             session.commitConfiguration()
@@ -71,7 +79,7 @@ final class QRScannerController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Task { @MainActor in
+        Task {
             let granted: Bool
             switch AVCaptureDevice.authorizationStatus(for: .video) {
             case .authorized:
@@ -95,15 +103,19 @@ final class QRScannerController: UIViewController {
     }
 
     private func startSession() {
-        guard !session.isRunning else { return }
-        let session = self.session
-        DispatchQueue.global(qos: .userInitiated).async { session.startRunning() }
+        guard !box.session.isRunning else { return }
+        let box = self.box
+        DispatchQueue.global(qos: .userInitiated).async {
+            box.session.startRunning()
+        }
     }
 
     private func stopSession() {
-        guard session.isRunning else { return }
-        let session = self.session
-        DispatchQueue.global(qos: .userInitiated).async { session.stopRunning() }
+        guard box.session.isRunning else { return }
+        let box = self.box
+        DispatchQueue.global(qos: .userInitiated).async {
+            box.session.stopRunning()
+        }
     }
 
     private func showStatus(_ text: String) {
@@ -140,12 +152,16 @@ final class QRDetector: NSObject, AVCaptureMetadataOutputObjectsDelegate {
         didOutput metadataObjects: [AVMetadataObject],
         from connection: AVCaptureConnection
     ) {
-        guard !fired.state else { return }
+        let alreadyFired = fired.withLock { fired -> Bool in
+            defer { fired = true }
+            return fired
+        }
+        guard !alreadyFired else { return }
+
         guard let object = metadataObjects.compactMap({ $0 as? AVMetadataMachineReadableCodeObject }).first,
               object.type == .qr,
               let value = object.stringValue else { return }
 
-        fired.withLock { $0 = true }
         let onCode = self.onCode
         Task { @MainActor in
             onCode(value)
