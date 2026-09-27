@@ -54,7 +54,10 @@ compact accessory key row.
 
 - `Conduit/App` — `ConduitApp` (SwiftUI `App` + SwiftData container),
   `AppModel` (`@MainActor @Observable`: biometric gate → `session.connect`,
-  consumes `session.events`, `pair(from:)` for `conduit://connect` codes),
+  consumes `session.events`, `pair(from:)` for `conduit://connect` codes,
+  `handleScenePhase` — keeps the bridge through the background grace window,
+  then disconnects + ends the Live Activity on expiry and reconnects on
+  return),
   `RootView` (onboarding vs terminal, auto-connect to last used server,
   deep-link routing: `conduit://connect` pairs + connects,
   `conduit://servers` opens the switcher), `PairingPayload` (parses

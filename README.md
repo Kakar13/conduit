@@ -155,6 +155,12 @@ the product, not a feature.
   the outage). A generation counter keeps close events from stale,
   deliberately-torn-down transports from triggering phantom reconnects. The
   terminal buffer is never cleared.
+- **Background truthfulness**: iOS suspends backgrounded apps and closes
+  their sockets after a short grace period. conduit keeps the bridge alive
+  through that window (quick app switches survive), then closes it
+  deliberately — the Live Activity ends instead of claiming "connected"
+  forever, and returning to the app drops straight back into a fresh
+  session.
 - **Remote persistence**: the shell on the far end still dies with TCP. For
   true session persistence set the profile's reattach command to
   `tmux new -A -s main` (or `screen -xRR`) — reconnects then resume the

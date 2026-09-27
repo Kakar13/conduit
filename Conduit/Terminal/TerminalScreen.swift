@@ -37,6 +37,13 @@ struct TerminalScreen: View {
                 model.reconnect()
             }
         }
+        .onChange(of: model.sessionState) { _, state in
+            // Local marker so a deliberate disconnect is visible in the
+            // scrollback (not remote output — no round trip involved).
+            if state == .idle {
+                handle.view?.feed(text: "\r\n\u{1B}[2m— disconnected\u{1B}[0m\r\n")
+            }
+        }
         .alert(
             "Trust this host?",
             isPresented: hostKeyChallengePresented,

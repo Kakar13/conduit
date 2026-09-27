@@ -1,5 +1,7 @@
 import Foundation
 import SwiftData
+import SwiftUI
+import UIKit
 
 /// The observable heart of the app. Owns the SSH session actor, pipes its
 /// events into UI state, and coordinates the biometric gate that guards the
@@ -130,6 +132,50 @@ final class AppModel {
         modelContext.insert(profile)
         try? modelContext.save()
         connect(to: profile)
+    }
+
+    // MARK: Background suspension
+
+    /// iOS gives a short grace period in the background, then suspends the
+    /// app and closes its sockets. We keep the bridge alive through that
+    /// window (quick app switches survive), and on expiry we close it
+    /// ourselves and end the Live Activity — nothing may claim "connected"
+    /// while we're suspended. The profile is kept so returning to the app
+    /// drops straight back in.
+    func handleScenePhase(_ phase: ScenePhase) {
+        switch phase {
+        case .background:
+            guard activeProfile != nil, backgroundTask == .invalid else { return }
+            backgroundTask = UIApplication.shared.beginBackgroundTask { [weak self] _ in
+                self?.backgroundTaskExpired()
+            }
+        case .active:
+            endBackgroundTask()
+            if needsReconnectOnActive, let activeProfile {
+                needsReconnectOnActive = false
+                connect(to: activeProfile)
+            }
+        default:
+            break
+        }
+    }
+
+    private var backgroundTask = UIBackgroundTaskIdentifier.invalid
+    private var needsReconnectOnActive = false
+
+    private func backgroundTaskExpired() {
+        endBackgroundTask()
+        guard activeProfile != nil else { return }
+        needsReconnectOnActive = true
+        liveActivity.endNow()
+        // Deliberate teardown; activeProfile is intentionally preserved.
+        Task { await session.disconnect() }
+    }
+
+    private func endBackgroundTask() {
+        guard backgroundTask != .invalid else { return }
+        UIApplication.shared.endBackgroundTask(backgroundTask)
+        backgroundTask = .invalid
     }
 
     // MARK: Host key responses

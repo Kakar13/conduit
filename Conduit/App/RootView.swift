@@ -6,6 +6,7 @@ import SwiftUI
 /// screen, no chrome.
 struct RootView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.scenePhase) private var scenePhase
     @Query(sort: \ServerProfile.lastConnectedAt, order: .reverse)
     private var profiles: [ServerProfile]
 
@@ -19,6 +20,9 @@ struct RootView: View {
         }
         .task {
             model.startObservingEvents()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            model.handleScenePhase(phase)
         }
         // Instant drop-in: connect to the most recently used server. The
         // @Query fetch lands after first appear, so re-run when it does.

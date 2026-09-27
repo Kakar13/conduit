@@ -17,6 +17,17 @@ struct ServerListView: View {
     var body: some View {
         NavigationStack {
             List {
+                if let active = model.activeProfile {
+                    Section {
+                        Button(role: .destructive) {
+                            dismiss()
+                            model.disconnect()
+                        } label: {
+                            Label("Disconnect from \(active.name)", systemImage: "bolt.slash")
+                        }
+                    }
+                }
+
                 Section("Servers") {
                     ForEach(profiles) { profile in
                         Button {

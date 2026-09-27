@@ -30,6 +30,12 @@ final class LiveActivityController {
         }
     }
 
+    /// Ends the current activity immediately, if any (user disconnect, or
+    /// the app is about to be suspended).
+    func endNow() {
+        Task { await endActivity() }
+    }
+
     // MARK: - Internals (main-actor)
 
     private func apply(state: SSHSession.State, serverName: String?, serverDetail: String?) async {
